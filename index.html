@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>デスペナルティコミュニケーション</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #333;
+            color: #fff;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            position: relative;
+        }
+        .title-screen, .monologue-screen, .question-screen, .game-over-screen, .win-screen {
+            text-align: center;
+            z-index: 2;
+        }
+        .hp-bar {
+            width: 80%;
+            background: #444;
+            border: 2px solid #fff;
+            border-radius: 5px;
+            margin: 20px auto;
+            overflow: hidden;
+        }
+        .hp-bar-inner {
+            height: 20px;
+            background: linear-gradient(to right, red, green);
+            width: 66%;
+        }
+        .btn {
+            background-color: #007BFF;
+            color: white;
+            padding: 10px 20px;
+            margin: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .btn:hover {
+            background-color: #0056b3;
+        }
+        .background-image {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: 1;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <img src="images/1.jpg" alt="Background" class="background-image" id="background-image">
+
+    <!-- Title Screen -->
+    <div class="title-screen" id="title-screen">
+        <h1>デスペナルティコミュニケーション</h1>
+        <button class="btn" onclick="startMonologue()">ゲームスタート</button>
+    </div>
+
+    <!-- Monologue Screen -->
+    <div class="monologue-screen" id="monologue-screen" style="display: none;">
+        <p id="monologue-text">
+            あなたは奇妙なデートに誘われた。普通ではない彼女との時間を乗り越えるには、
+            あなたの発言一つ一つが試される。選択肢を誤れば命の保証はない。
+            あなたはこの試練を乗り越え、彼女の信頼を得ることができるのか？
+        </p>
+        <button class="btn" onclick="startGame()">次へ</button>
+    </div>
+
+    <!-- Question Screen -->
+    <div class="question-screen" id="question-screen" style="display: none;">
+        <div class="hp-bar">
+            <div class="hp-bar-inner" id="hp-bar-inner"></div>
+        </div>
+        <h2 id="question-text">質問文がここに表示されます</h2>
+        <div id="choices"></div>
+    </div>
+
+    <!-- Game Over Screen -->
+    <div class="game-over-screen" id="game-over-screen" style="display: none;">
+        <h1>あなたを処刑します</h1>
+        <button class="btn" onclick="restartGame()">再スタート</button>
+    </div>
+
+    <!-- Win Screen -->
+    <div class="win-screen" id="win-screen" style="display: none;">
+        <h1 id="win-message"></h1>
+        <button class="btn" onclick="restartGame()">再スタート</button>
+    </div>
+
+    <script>
+        const questions = [
+            {
+                text: "あなたが誘ったのに何なのその服装は？",
+                choices: [
+                    { text: "え、えーと、わ、忘れちゃった笑", hp: -5 },
+                    { text: "これは吟遊詩人の皮を剥いで作った召物にございます。", hp: 5 },
+                    { text: "女らしいつまらない質問だね。", hp: 0 },
+                    { text: "さっきユニクロで買ったんだよ。", hp: -10 },
+                ],
+            },
+            {
+                text: "ふーん。それで今日はどこへ行くの？",
+                choices: [
+                    { text: "西の村で眼の黒い山羊が溺れているとのことで、調査に向かいます。", hp: 5 },
+                    { text: "いちいち聞いてくるのは嫌がらせか？", hp: 0 },
+                    { text: "水族館とかどうかな？イルカ好きだよね！", hp: -5 },
+                    { text: "フレンチレストランでランチだよ。", hp: -10 },
+                ],
+            },
+        ];
+
+        let currentQuestion = 0;
+        let hp = 10;
+
+        function startMonologue() {
+            document.getElementById('title-screen').style.display = 'none';
+            document.getElementById('monologue-screen').style.display = 'block';
+        }
+
+        function startGame() {
+            document.getElementById('monologue-screen').style.display = 'none';
+            document.getElementById('question-screen').style.display = 'block';
+            updateQuestion();
+            updateHPBar();
+        }
+
+        function updateQuestion() {
+            const question = questions[currentQuestion];
+            document.getElementById('question-text').textContent = question.text;
+            const choicesDiv = document.getElementById('choices');
+            choicesDiv.innerHTML = '';
+            question.choices.forEach((choice, index) => {
+                const button = document.createElement('button');
+                button.textContent = choice.text;
+                button.className = 'btn';
+                button.onclick = () => handleAnswer(choice.hp);
+                choicesDiv.appendChild(button);
+            });
+        }
+
+        function handleAnswer(change) {
+            hp += change;
+            if (hp > 15) hp = 15;
+            updateHPBar();
+
+            if (hp <= 0) {
+                endGame(false);
+                return;
+            }
+
+            currentQuestion++;
+            if (currentQuestion >= questions.length) {
+                endGame(true);
+            } else {
+                updateQuestion();
+            }
+        }
+
+        function updateHPBar() {
+            const hpBar = document.getElementById('hp-bar-inner');
+            const percentage = (hp / 15) * 100;
+            hpBar.style.width = percentage + '%';
+        }
+
+        function endGame(win) {
+            document.getElementById('question-screen').style.display = 'none';
+            document.getElementById('background-image').classList.add('hidden');
+
+            if (win) {
+                document.getElementById('win-screen').style.display = 'block';
+                const winMessage = hp === 15 ? "結婚しましょう" : "付き合いましょう";
+                document.getElementById('win-message').textContent = winMessage;
+            } else {
+                document.getElementById('game-over-screen').style.display = 'block';
+            }
+        }
+
+        function restartGame() {
+            currentQuestion = 0;
+            hp = 10;
+            document.getElementById('game-over-screen').style.display = 'none';
+            document.getElementById('win-screen').style.display = 'none';
+            document.getElementById('background-image').classList.remove('hidden');
+            startMonologue();
+        }
+    </script>
+
+</body>
+</html>
